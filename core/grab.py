@@ -67,7 +67,7 @@ def grab_followers(target_account):
     try:
         # write execution results to file
         # TODO: paths to be read from config files
-        with open("./" + str(target) + "_followers.txt", "w") as text_file:
+        with open("./core/followers/" + str(target) + "_followers.txt", "w") as text_file:
             for follower in followers:
                 text_file.write("%s\n" % follower['username'])
     except Exception as e:

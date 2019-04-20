@@ -2,7 +2,7 @@ import flask
 from flask import request
 from rq import Queue
 
-from core.extractV5 import init
+from core.scrape import init
 from core.grab import grab_followers
 from grab_worker import conn1
 from scrape_worker import conn2
