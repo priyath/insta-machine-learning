@@ -4,15 +4,23 @@ from rq import Queue
 
 from core.scrape import init
 from core.grab import grab_followers
+from core.predict import analyze
+
 from grab_worker import conn1
 from scrape_worker import conn2
+from ml_worker import conn3
+
+import logging, logging.config, yaml
+
+logging.config.dictConfig(yaml.load(open('./config/logging.conf')))
+logger = logging.getLogger(__name__)
 
 app = flask.Flask(__name__)
 app.config["DEBUG"] = False
 
 q1 = Queue('Q1', connection=conn1)
 q2 = Queue('Q2', connection=conn2)
-
+q3 = Queue('Q3', connection=conn3)
 
 # health check endpoint
 @app.route('/', methods=['GET'])
@@ -26,21 +34,31 @@ def api_all():
     content = request.get_json()
     target = content['account']
 
+    q1_id = target + '-q1'
+    q2_id = target + '-q2'
+    q3_id = target + '-q3'
+
     # queue our account id to grab followers
-    job_1 = q1.enqueue_call(
-        func=grab_followers, args=(target, ), result_ttl=5000
-    )
+    if not q1.fetch_job(q1_id) and not q2.fetch_job(q2_id):
+        job_1 = q1.enqueue_call(
+            func=grab_followers, args=(target, ), result_ttl=5000, job_id=q1_id
+        )
 
-    # queue our account id to grab follower details
-    job_2 = q2.enqueue_call(
-        func=init, depends_on=job_1, args=(target, ), result_ttl=5000
-    )
+        job_2 = q2.enqueue_call(
+            func=init, depends_on=job_1, args=(target,), result_ttl=5000, job_id=q2_id
+        )
 
-    print(job_1.get_id())
-    return job_1.get_id()
+        job_3 = q3.enqueue_call(
+            func=analyze, depends_on=job_2, args=(target,), result_ttl=5000, job_id=q3_id
+        )
+
+        logger.info('[{}] Account is queued for processing'.format(target))
+        return job_1.get_id()
+    else:
+        logger.warning('[{}] Account is already queued.'.format(target))
+        return '{} account is already being processed'.format(target)
+
 
 
 if __name__ == '__main__':
-    import logging, logging.config, yaml
-    logging.config.dictConfig(yaml.load(open('./config/logging.conf')))
     app.run()
