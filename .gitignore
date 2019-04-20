@@ -3,3 +3,5 @@ __pycache__/
 logs/
 venv/
 instagram_private_api/
+*.txt
+*.csv
