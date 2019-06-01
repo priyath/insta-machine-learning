@@ -5,11 +5,19 @@ from rq import Worker, Queue, Connection
 import logging, logging.config, yaml
 from logging.handlers import RotatingFileHandler
 
+logger = None
+
 listen = ['Q2']
 
 redis_url = os.getenv('REDISTOGO_URL', 'redis://localhost:6379')
 
 conn2 = redis.from_url(redis_url)
+
+
+def scrape_exception_handler(job, exc_type, exc_value, traceback):
+    logger.error('job {} execution failed. status: {}'.format(job.id, job.get_status()))
+    return False
+
 
 if __name__ == '__main__':
     # TODO: move log file name to config file
@@ -28,5 +36,5 @@ if __name__ == '__main__':
     #logging.config.dictConfig(yaml.load(open('./config/logging-workers.conf')))
 
     with Connection(conn2):
-        worker = Worker(list(map(Queue, listen)))
+        worker = Worker(list(map(Queue, listen)), exception_handlers=[scrape_exception_handler])
         worker.work()

@@ -10,6 +10,13 @@ listen = ['Q1']
 redis_url = os.getenv('REDISTOGO_URL', 'redis://localhost:6379')
 
 conn1 = redis.from_url(redis_url)
+logger = None
+
+
+def grab_exception_handler(job, exc_type, exc_value, traceback):
+    logger.error('job {} execution failed. status: {}'.format(job.id, job.get_status()))
+    return False
+
 
 if __name__ == '__main__':
     # TODO: move log file name to config file
@@ -28,5 +35,6 @@ if __name__ == '__main__':
     #logging.config.dictConfig(yaml.load(open('./config/logging-workers.conf')))
 
     with Connection(conn1):
-        worker = Worker(list(map(Queue, listen)))
+        worker = Worker(list(map(Queue, listen)), exception_handlers=[grab_exception_handler])
         worker.work()
+

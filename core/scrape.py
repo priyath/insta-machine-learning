@@ -192,8 +192,7 @@ def write_to_file(path, mode, content):
     except Exception as e:
         logger.error('[{}] Writing scraped content to file failed.'.format(target_account))
         logger.error(e)
-        sys.exit()
-
+        raise e
 
 def save_scraped_data(profile_data, failed_list, deleted_list):
     write_to_file(target_account + '_model_data.csv', 'a', profile_data)
@@ -241,8 +240,8 @@ def initate_scraping(user_list, max_workers=MAX_WORKERS, main_loop_counter=1, fa
 
         if len(failed_counter) > 0:
             if failed_retries > FAILED_RETRY_LIMIT:
-                logger.info('[{}] Failed retry count exceeded. Script will exit.'.format(target_account))
-                sys.exit()
+                logger.error('[{}] Failed retry count exceeded. Script will exit.'.format(target_account))
+                raise Exception('[{}] Retry count exceeded'.format(target_account))
 
             prev_failed_count = len(user_list)
             current_failed_count = len(failed_counter)
