@@ -9,7 +9,7 @@ from bs4 import BeautifulSoup
 import configparser
 import logging
 import os, errno
-
+import core.db as dbHandler
 
 def silent_remove(filename):
     try:
@@ -229,9 +229,18 @@ def initate_scraping(user_list, max_workers=MAX_WORKERS, main_loop_counter=1, fa
                         failed_counter.append(data['username'] + '\n')
                 print_str = '[' + str(main_loop_counter) + ']processed ' + str(processed_counter) + '/' + str(
                     len(user_list)) + ' Failed count: ' + str(len(failed_counter))
+
+                if (processed_counter % 1000) == 0:
+                    logger.info('[{}] processed counter {}/{} failed count {} status_code {}'.format(target_account,
+                                                                                                 processed_counter,
+                                                                                                 len(user_list),
+                                                                                                 len(failed_counter),
+                                                                                                 data['status_code']))
             except Exception as exc:
                 logger.error('Something went wrong')
                 logger.error(exc)
+                dbHandler.grab_insert(target_account, 2, dbHandler.FAILED)
+                raise
 
         logger.info('[{}] Iteration complete. total count: {} processed count: {} failed count: {} deleted count: {}'
                     .format(target_account, len(user_list), processed_counter, len(failed_counter), len(deleted_counter)))
@@ -241,6 +250,7 @@ def initate_scraping(user_list, max_workers=MAX_WORKERS, main_loop_counter=1, fa
         if len(failed_counter) > 0:
             if failed_retries > FAILED_RETRY_LIMIT:
                 logger.error('[{}] Failed retry count exceeded. Script will exit.'.format(target_account))
+                dbHandler.grab_insert(target_account, 2, dbHandler.FAILED)
                 raise Exception('[{}] Retry count exceeded'.format(target_account))
 
             prev_failed_count = len(user_list)
@@ -273,5 +283,11 @@ def init(target):
 
     start_time = time.time()
     logger.info('[{}] Scraping {} accounts from {}'.format(target_account, len(user_list), target_account))
-    initate_scraping(user_list)
+
+    if not dbHandler.is_complete(target_account, 2):
+        dbHandler.grab_insert(target_account, 2, dbHandler.PROCESSING)
+        initate_scraping(user_list)
+        dbHandler.grab_insert(target_account, 2, dbHandler.COMPLETE)
+    else:
+        logger.info('[{}] Scrape execution already complete.'.format(target_account))
     exec_time = (time.time() - start_time)
