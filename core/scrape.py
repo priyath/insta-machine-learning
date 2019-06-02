@@ -274,20 +274,20 @@ def initate_scraping(user_list, max_workers=MAX_WORKERS, main_loop_counter=1, fa
 def init(target):
     global user_filename, target_account
 
-    user_filename = target + '_followers.txt'
-    silent_remove('./core/followers/' + target + '_model_data.csv')
-
+    start_time = time.time()
     target_account = target
 
-    user_list = load_user_list()
-
-    start_time = time.time()
-    logger.info('[{}] Scraping {} accounts from {}'.format(target_account, len(user_list), target_account))
-
     if not dbHandler.is_complete(target_account, 2):
+        user_filename = target + '_followers.txt'
+        silent_remove('./core/followers/' + target + '_model_data.csv')
+
+        user_list = load_user_list()
+        logger.info('[{}] Scraping {} accounts from {}'.format(target_account, len(user_list), target_account))
+
         dbHandler.grab_insert(target_account, 2, dbHandler.PROCESSING)
         initate_scraping(user_list)
         dbHandler.grab_insert(target_account, 2, dbHandler.COMPLETE)
     else:
         logger.info('[{}] Scrape execution already complete.'.format(target_account))
+
     exec_time = (time.time() - start_time)
