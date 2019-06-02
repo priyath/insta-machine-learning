@@ -1,5 +1,5 @@
 import flask
-from flask import request
+from flask import request, abort, Response
 from rq import Queue
 from flask import jsonify
 
@@ -63,13 +63,15 @@ def api_analyze():
 
         logger.info('[{}] Account is queued for processing'.format(target))
         return jsonify({
-            'status': '{} account is queued for processing'.format(target)
-        })
+            'account': target,
+            'message': 'Account is successfully queued for processing'
+        }), 202
     else:
         logger.warning('[{}] Account is already queued.'.format(target))
         return jsonify({
-            'status': 'account {} is already being processed.'.format(target)
-        })
+            'account': target,
+            'message': 'Account is already queued for processing'
+        }), 409
 
 
 # endpoint to fetch job status
@@ -78,7 +80,7 @@ def api_status():
     content = request.get_json()
     target = content['account']
 
-    return dbHandler.get_status(target)
+    return dbHandler.get_status(target), 200
 
 
 # endpoint to get analysis results
@@ -87,7 +89,7 @@ def api_results():
     content = request.get_json()
     target = content['account']
 
-    return dbHandler.get_results(target)
+    return dbHandler.get_results(target), 200
 
 
 if __name__ == '__main__':
