@@ -5,9 +5,11 @@ PROCESSING = 'processing'
 COMPLETE = 'complete'
 FAILED = 'failed'
 
+database_path = './database/mlinsta.db'
+
 
 def insert_account(username):
-    con = sql.connect('./database/mlinsta.db')
+    con = sql.connect(database_path)
     cur = con.cursor()
 
     try:
@@ -21,7 +23,7 @@ def insert_account(username):
         con.close()
 
 def grab_insert(username, queue, status):
-    con = sql.connect('./database/mlinsta.db')
+    con = sql.connect(database_path)
     cur = con.cursor()
 
     query = "UPDATE ACCOUNT_INFO SET q{}_status = ? WHERE username = ?".format(queue)
@@ -32,7 +34,7 @@ def grab_insert(username, queue, status):
 
 
 def is_complete(username, queue_number):
-    con = sql.connect('./database/mlinsta.db')
+    con = sql.connect(database_path)
     cur = con.cursor()
 
     query = None
@@ -53,7 +55,7 @@ def is_complete(username, queue_number):
 
 
 def write_results(username, json_string):
-    con = sql.connect('./database/mlinsta.db')
+    con = sql.connect(database_path)
     cur = con.cursor()
 
     cur.execute("UPDATE ACCOUNT_INFO SET result = ? WHERE username = ?", (json_string, username))
@@ -62,7 +64,7 @@ def write_results(username, json_string):
 
 
 def get_results(username):
-    con = sql.connect('./database/mlinsta.db')
+    con = sql.connect(database_path)
     cur = con.cursor()
 
     cur.execute("SELECT result FROM ACCOUNT_INFO WHERE username = ?", (username,))
@@ -75,7 +77,7 @@ def get_results(username):
 
 
 def get_status(username):
-    con = sql.connect('./database/mlinsta.db')
+    con = sql.connect(database_path)
     cur = con.cursor()
 
     cur.execute("SELECT q1_status, q2_status, q3_status FROM ACCOUNT_INFO WHERE username = ?", (username,))
@@ -93,7 +95,7 @@ def get_status(username):
 
 
 def should_queue(username):
-    con = sql.connect('./database/mlinsta.db')
+    con = sql.connect(database_path)
     cur = con.cursor()
 
     cur.execute("SELECT q1_status, q2_status, q3_status FROM ACCOUNT_INFO WHERE username = ?", (username,))

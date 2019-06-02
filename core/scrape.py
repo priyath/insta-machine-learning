@@ -11,6 +11,10 @@ import logging
 import os, errno
 import core.db as dbHandler
 
+config_path = 'config/config.ini'
+followers_path = './core/followers/'
+
+
 def silent_remove(filename):
     try:
         os.remove(filename)
@@ -29,7 +33,7 @@ index = None
 
 # load configurations from  config.ini
 config = configparser.ConfigParser()
-config.read('config/config.ini')
+config.read(config_path)
 proxy_ports = config.get('Ports', 'proxy_ports').split(',')
 control_ports = config.get('Ports', 'control_ports').split(',')
 MAX_TOR_INSTANCES = int(config.get('Instances', 'tor_instances').strip())
@@ -62,7 +66,7 @@ desktop_agents = [
 
 def load_user_list():
     logger.info('[{}] Reading user list from {}'.format(target_account, user_filename))
-    with open('./core/followers/' + user_filename, 'r') as f:
+    with open(followers_path + user_filename, 'r') as f:
         user_list = f.readlines()
     return user_list
 
@@ -186,7 +190,7 @@ def get_profile_json(username, user_link, count):
 
 def write_to_file(path, mode, content):
     try:
-        file = open('./core/followers/' + path, mode)
+        file = open(followers_path + path, mode)
         file.writelines(content)
         file.close()
     except Exception as e:
@@ -279,7 +283,7 @@ def init(target):
 
     if not dbHandler.is_complete(target_account, 2):
         user_filename = target + '_followers.txt'
-        silent_remove('./core/followers/' + target + '_model_data.csv')
+        silent_remove(followers_path + target + '_model_data.csv')
 
         user_list = load_user_list()
         logger.info('[{}] Scraping {} accounts from {}'.format(target_account, len(user_list), target_account))

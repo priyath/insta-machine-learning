@@ -10,7 +10,8 @@ import core.db as dbHandler
 logger = logging.getLogger("rq.worker.ml")
 
 filename = './core/prediction_model.sav'
-
+model_data_path = './core/followers/'
+analysis_results_path = './core/analysis/'
 
 def analyze(target):
     logger.info('[{}] Analysing account {}'.format(target, target))
@@ -22,7 +23,7 @@ def analyze(target):
 
             # Load dataset to be analyzed
             names_ = ['username','numberPosts','numberFollowing','numberFollowers','hasProfilePicture','isPrivate','isVerified','recentCount','recentLikeCount','recentCommentCount','followersFollowingRatio','followingPostsRatio','followersPostsRatio','differenceRatio', 'rating']
-            dataset_ = pandas.read_csv('./core/followers/' + target + '_model_data.csv', names=names_)
+            dataset_ = pandas.read_csv(model_data_path + target + '_model_data.csv', names=names_)
         except Exception as e:
             logger.error('[{}] Something went wrong while loading model and/or model data to memory'.format(target))
             logger.error(e)
@@ -106,10 +107,10 @@ def analyze(target):
         try:
             # write output to file
             ts = time.time()
-            with open('./core/analysis/' + target + '_analysis_details.csv', 'w') as csv_file:
+            with open(analysis_results_path + target + '_analysis_details.csv', 'w') as csv_file:
                 csv_file.write(results)
 
-            with open('./core/analysis/' + target + '_account_stats.json', 'w') as json_file:
+            with open(analysis_results_path + target + '_account_stats.json', 'w') as json_file:
                 json.dump(account_statistics, json_file)
         except Exception as e:
             logger.error('[{}] Something went wrong while writing analysis results to file'.format(target))

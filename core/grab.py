@@ -9,12 +9,15 @@ import core.db as dbHandler
 
 logger = logging.getLogger("rq.worker.grab")
 
+config_path = 'config/config.ini'
+followers_path = './core/followers/'
+
 start = time.time()
 
 # load configurations from  config.ini
 try:
     config = configparser.ConfigParser()
-    config.read('config/config.ini')
+    config.read(config_path)
     username = config.get('Credentials', 'username').strip()
     password = config.get('Credentials', 'password').strip()
     scrape_limit = int(config.get('Scrape', 'scrape_limit').strip())
@@ -84,7 +87,7 @@ def grab_followers(target_account, scrape_percentage):
         try:
             # write execution results to file
             # TODO: paths to be read from config files
-            with open("./core/followers/" + str(target) + "_followers.txt", "w") as text_file:
+            with open(followers_path + str(target) + "_followers.txt", "w") as text_file:
                 for follower in followers:
                     logger.info('[{}] username: {}'.format(target_account, follower['username']))
                     text_file.write("%s\n" % follower['username'])
