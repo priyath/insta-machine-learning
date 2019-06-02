@@ -25,6 +25,10 @@ q1 = Queue('Q1', connection=conn1)
 q2 = Queue('Q2', connection=conn2)
 q3 = Queue('Q3', connection=conn3)
 
+
+def validate_request(content):
+    return 'account' in content
+
 # health check endpoint
 @app.route('/', methods=['GET'])
 def home():
@@ -35,10 +39,15 @@ def home():
 @app.route('/api/v1/analyze', methods=['POST'])
 def api_analyze():
     content = request.get_json()
+
+    if not validate_request(content):
+        abort(400, 'required parameter account is missing')
+
     target = content['account']
-    scrape_percentage = content['percentage']
+    scrape_percentage = content['percentage'] if 'percentage' in content else 100
     #force = content['force']
 
+    logger.info('[{}] Account received for processing. account: {} percentage: {}'.format(target, target, scrape_percentage))
     q1_id = target + '-q1'
     q2_id = target + '-q2'
     q3_id = target + '-q3'
@@ -78,8 +87,13 @@ def api_analyze():
 @app.route('/api/v1/status', methods=['POST'])
 def api_status():
     content = request.get_json()
-    target = content['account']
 
+    if not validate_request(content):
+        abort(400, 'required parameter account is missing')
+
+    target = content['account']
+    logger.info(
+        '[{}] Account received for status. account: {}'.format(target, target))
     return dbHandler.get_status(target), 200
 
 
@@ -87,8 +101,14 @@ def api_status():
 @app.route('/api/v1/results', methods=['POST'])
 def api_results():
     content = request.get_json()
+
+    if not validate_request(content):
+        abort(400, 'required parameter account is missing')
+
     target = content['account']
 
+    logger.info(
+        '[{}] Account received for results. account: {}'.format(target, target))
     return dbHandler.get_results(target), 200
 
 
