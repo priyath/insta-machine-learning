@@ -89,7 +89,6 @@ def grab_followers(target_account, scrape_percentage):
             # TODO: paths to be read from config files
             with open(followers_path + str(target) + "_followers.txt", "w") as text_file:
                 for follower in followers:
-                    logger.info('[{}] username: {}'.format(target_account, follower['username']))
                     text_file.write("%s\n" % follower['username'])
         except Exception as e:
             logger.error('Failed when writing results to file')
