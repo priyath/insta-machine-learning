@@ -4,6 +4,7 @@ import redis
 from rq import Worker, Queue, Connection
 import logging, logging.config, yaml
 from logging.handlers import RotatingFileHandler
+import core.db as dbHandler
 
 logger = None
 listen = ['Q3']
@@ -14,7 +15,9 @@ conn3 = redis.from_url(redis_url)
 
 
 def ml_exception_handler(job, exc_type, exc_value, traceback):
-    logger.error('job {} execution failed. status: {}'.format(job.id, job.get_status()))
+    account = job.id.split('-')[0].strip()
+    logger.error('[{}] job {} execution failed. status: {}'.format(account, job.id, job.get_status()))
+    dbHandler.update_queue_status(account, 3, dbHandler.FAILED)
     return False
 
 

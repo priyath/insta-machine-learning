@@ -17,6 +17,7 @@ followers_path = './core/followers/'
 start_time = None
 scraped_count = 0
 
+
 def silent_remove(filename):
     try:
         os.remove(filename)
@@ -249,7 +250,7 @@ def initate_scraping(user_list, max_workers=MAX_WORKERS, main_loop_counter=1, fa
             except Exception as exc:
                 logger.error('Something went wrong')
                 logger.error(exc)
-                dbHandler.update_queue_status(target_account, 2, dbHandler.FAILED)
+                # dbHandler.update_queue_status(target_account, 2, dbHandler.FAILED)
                 raise
 
         logger.info('[{}] Iteration complete. total count: {} processed count: {} failed count: {} deleted count: {}'
@@ -260,7 +261,7 @@ def initate_scraping(user_list, max_workers=MAX_WORKERS, main_loop_counter=1, fa
         if len(failed_counter) > 0:
             if failed_retries > FAILED_RETRY_LIMIT:
                 logger.error('[{}] Failed retry count exceeded. Script will exit.'.format(target_account))
-                dbHandler.update_queue_status(target_account, 2, dbHandler.FAILED)
+                # dbHandler.update_queue_status(target_account, 2, dbHandler.FAILED)
                 raise Exception('[{}] Retry count exceeded'.format(target_account))
 
             prev_failed_count = len(user_list)

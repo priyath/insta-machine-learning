@@ -27,7 +27,7 @@ def analyze(target):
         except Exception as e:
             logger.error('[{}] Something went wrong while loading model and/or model data to memory'.format(target))
             logger.error(e)
-            dbHandler.update_queue_status(target, 3, dbHandler.FAILED)
+            # dbHandler.update_queue_status(target, 3, dbHandler.FAILED)
             raise
 
         try:
@@ -101,7 +101,7 @@ def analyze(target):
         except Exception as e:
             logger.error('[{}] Something went wrong while performing analysis'.format(target))
             logger.error(e)
-            dbHandler.update_queue_status(target, 3, dbHandler.FAILED)
+            # dbHandler.update_queue_status(target, 3, dbHandler.FAILED)
             raise
 
         try:
@@ -115,7 +115,7 @@ def analyze(target):
         except Exception as e:
             logger.error('[{}] Something went wrong while writing analysis results to file'.format(target))
             logger.error(e)
-            dbHandler.update_queue_status(target, 3, dbHandler.FAILED)
+            # dbHandler.update_queue_status(target, 3, dbHandler.FAILED)
             raise
         dbHandler.write_results(target, json.dumps(account_statistics))
         dbHandler.update_queue_status(target, 3, dbHandler.COMPLETE)
