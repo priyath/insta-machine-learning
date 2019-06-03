@@ -100,12 +100,12 @@ def get_status(username):
             "account": username,
             "1_grab_queue": {
                 "status": row[0],
-                "grabbed": row[3],
+                "grab_count": row[3],
                 "exec_time": row[5]
             },
             "2_scrape_queue": {
                 "status": row[1],
-                "scraped": row[4],
+                "scrape_count": row[4],
                 "exec_time": row[6]
             },
             "3_predict_queue": {
@@ -140,11 +140,14 @@ def update_grab_progress(username, grabbed, exec_time):
     con.close()
 
 
-def update_grab_execution_time(username, exec_time):
+# TODO: handle redundancies in some of these functions
+################# SCRAPE UTILITY FUNCTIONS ########################
+
+def update_scrape_progress(username, scraped, exec_time):
     con = sql.connect(database_path)
     cur = con.cursor()
 
-    cur.execute("UPDATE ACCOUNT_INFO SET q1_exec_time = ? WHERE username = ?", (exec_time, username))
+    cur.execute("UPDATE ACCOUNT_INFO SET q2_progress = ?, q2_exec_time = ? WHERE username = ?", (scraped, exec_time, username))
     con.commit()
 
     con.close()

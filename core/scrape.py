@@ -14,6 +14,8 @@ import core.db as dbHandler
 config_path = 'config/config.ini'
 followers_path = './core/followers/'
 
+start_time = None
+scraped_count = 0
 
 def silent_remove(filename):
     try:
@@ -205,6 +207,7 @@ def save_scraped_data(profile_data, failed_list, deleted_list):
 
 
 def initate_scraping(user_list, max_workers=MAX_WORKERS, main_loop_counter=1, failed_retries=0):
+    global start_time, scraped_count
     profile_json_requests = []
 
     # multi-threading implementation for scraping
@@ -226,6 +229,7 @@ def initate_scraping(user_list, max_workers=MAX_WORKERS, main_loop_counter=1, fa
                 processed_counter = processed_counter + 1
                 if data['success']:
                     profile_data.append(data['data'])
+                    scraped_count = scraped_count + 1
                 else:
                     if data['status_code'] and data['status_code'] == 404:
                         deleted_counter.append(data['username'] + '\n')
@@ -240,6 +244,8 @@ def initate_scraping(user_list, max_workers=MAX_WORKERS, main_loop_counter=1, fa
                                                                                                  len(user_list),
                                                                                                  len(failed_counter),
                                                                                                  data['status_code']))
+                    exec_time = time.time() - start_time
+                    dbHandler.update_scrape_progress(target_account, scraped_count, exec_time)
             except Exception as exc:
                 logger.error('Something went wrong')
                 logger.error(exc)
@@ -261,7 +267,7 @@ def initate_scraping(user_list, max_workers=MAX_WORKERS, main_loop_counter=1, fa
             current_failed_count = len(failed_counter)
             failed_diff = prev_failed_count - current_failed_count
 
-            logger.info('[{}] Failed diff: {}'.format(target_account, failed_diff))
+            logger.info('[{}] Scraped account count: {}'.format(target_account, failed_diff))
             if failed_diff == 0:
                 failed_retries += 1
             else:
@@ -276,7 +282,7 @@ def initate_scraping(user_list, max_workers=MAX_WORKERS, main_loop_counter=1, fa
 
 
 def init(target):
-    global user_filename, target_account
+    global user_filename, target_account, start_time
 
     start_time = time.time()
     target_account = target
@@ -290,8 +296,9 @@ def init(target):
 
         dbHandler.update_queue_status(target_account, 2, dbHandler.PROCESSING)
         initate_scraping(user_list)
+        exec_time = (time.time() - start_time)
+        dbHandler.update_scrape_progress(target_account, scraped_count, exec_time)
         dbHandler.update_queue_status(target_account, 2, dbHandler.COMPLETE)
     else:
         logger.info('[{}] Scrape execution already complete.'.format(target_account))
 
-    exec_time = (time.time() - start_time)
