@@ -8,7 +8,6 @@ from core.grab import grab_followers
 from core.predict import analyze
 import core.db as dbHandler
 
-
 from grab_worker import conn1
 from scrape_worker import conn2
 from ml_worker import conn3
@@ -27,7 +26,14 @@ q3 = Queue('Q3', connection=conn3)
 
 
 def validate_request(content):
-    return 'account' in content
+
+    if 'account' not in content:
+        return False, 'required parameter account is missing'
+    if 'percentage' in content and not content['percentage'].isdigit():
+        return False, 'percentage should be a number'
+
+    return True, None
+
 
 # health check endpoint
 @app.route('/', methods=['GET'])
@@ -40,14 +46,17 @@ def home():
 def api_analyze():
     content = request.get_json()
 
-    if not validate_request(content):
-        abort(400, 'required parameter account is missing')
+    is_valid_request, error_message = validate_request(content)
+
+    if not is_valid_request:
+        abort(400, error_message)
 
     target = content['account']
-    scrape_percentage = content['percentage'] if 'percentage' in content else 100
-    #force = content['force']
+    scrape_percentage = int(content['percentage']) if 'percentage' in content else 100
+    # force = content['force']
 
-    logger.info('[{}] Account received for processing. account: {} percentage: {}'.format(target, target, scrape_percentage))
+    logger.info(
+        '[{}] Account received for processing. account: {} percentage: {}'.format(target, target, scrape_percentage))
     q1_id = target + '-q1'
     q2_id = target + '-q2'
     q3_id = target + '-q3'
