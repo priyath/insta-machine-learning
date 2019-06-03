@@ -97,6 +97,7 @@ def get_status(username):
 
     if row:
         status = {
+            "account": username,
             "1_grab_queue": {
                 "status": row[0],
                 "grabbed": row[3],
