@@ -66,19 +66,6 @@ def write_results(username, json_string):
     con.close()
 
 
-def get_results(username):
-    con = sql.connect(database_path)
-    cur = con.cursor()
-
-    cur.execute("SELECT result FROM ACCOUNT_INFO WHERE username = ?", (username,))
-    row = cur.fetchone()
-
-    if row:
-        return row[0]
-    else:
-        return '{}'
-
-
 def get_status(username):
     con = sql.connect(database_path)
     cur = con.cursor()

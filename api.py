@@ -96,20 +96,5 @@ def api_status():
     return dbHandler.get_status(account), 200
 
 
-# endpoint to get analysis results
-@app.route('/api/v1/results', methods=['POST'])
-def api_results():
-    content = request.get_json()
-
-    if not validate_request(content):
-        abort(400, 'required parameter account is missing')
-
-    target = content['account']
-
-    logger.info(
-        '[{}] Account received for results. account: {}'.format(target, target))
-    return dbHandler.get_results(target), 200
-
-
 if __name__ == '__main__':
     app.run()
