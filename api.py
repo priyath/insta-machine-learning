@@ -29,7 +29,7 @@ def validate_request(content):
 
     if 'account' not in content:
         return False, 'required parameter account is missing'
-    if 'percentage' in content and not content['percentage'].isdigit():
+    if 'percentage' in content and not str(content['percentage']).isdigit():
         return False, 'percentage should be a number'
 
     return True, None
