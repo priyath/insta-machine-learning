@@ -2,7 +2,8 @@
 __pycache__/
 logs/
 venv/
-instagram_private_api/
 *.txt
 *.csv
 *.json
+rotateV5.py
+database/mlinsta.db
