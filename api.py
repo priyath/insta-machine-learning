@@ -52,7 +52,7 @@ def api_analyze():
         abort(400, error_message)
 
     target = content['account']
-    scrape_percentage = int(content['percentage']) if 'percentage' in content else 100
+    scrape_percentage = float(content['percentage']) if 'percentage' in content else 100
     # force = content['force']
 
     logger.info(
