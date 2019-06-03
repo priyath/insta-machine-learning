@@ -22,7 +22,8 @@ def insert_account(username):
         con.commit()
         con.close()
 
-def grab_insert(username, queue, status):
+
+def update_queue_status(username, queue, status):
     con = sql.connect(database_path)
     cur = con.cursor()
 

@@ -16,7 +16,7 @@ analysis_results_path = './core/analysis/'
 def analyze(target):
     logger.info('[{}] Analysing account {}'.format(target, target))
     if not dbHandler.is_complete(target, 3):
-        dbHandler.grab_insert(target, 3, dbHandler.PROCESSING)
+        dbHandler.update_queue_status(target, 3, dbHandler.PROCESSING)
         try:
             # load the model from disk
             loaded_model = pickle.load(open(filename, 'rb'), encoding='latin1')
@@ -27,7 +27,7 @@ def analyze(target):
         except Exception as e:
             logger.error('[{}] Something went wrong while loading model and/or model data to memory'.format(target))
             logger.error(e)
-            dbHandler.grab_insert(target, 3, dbHandler.FAILED)
+            dbHandler.update_queue_status(target, 3, dbHandler.FAILED)
             raise
 
         try:
@@ -101,7 +101,7 @@ def analyze(target):
         except Exception as e:
             logger.error('[{}] Something went wrong while performing analysis'.format(target))
             logger.error(e)
-            dbHandler.grab_insert(target, 3, dbHandler.FAILED)
+            dbHandler.update_queue_status(target, 3, dbHandler.FAILED)
             raise
 
         try:
@@ -115,10 +115,10 @@ def analyze(target):
         except Exception as e:
             logger.error('[{}] Something went wrong while writing analysis results to file'.format(target))
             logger.error(e)
-            dbHandler.grab_insert(target, 3, dbHandler.FAILED)
+            dbHandler.update_queue_status(target, 3, dbHandler.FAILED)
             raise
         dbHandler.write_results(target, json.dumps(account_statistics))
-        dbHandler.grab_insert(target, 3, dbHandler.COMPLETE)
+        dbHandler.update_queue_status(target, 3, dbHandler.COMPLETE)
     else:
         logger.info('[{}] Predict execution is already complete.'.format(target))
 

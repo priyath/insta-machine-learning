@@ -32,7 +32,7 @@ def grab_followers(target_account, scrape_percentage):
     followers = []
 
     if not dbHandler.is_complete(target, 1):
-        dbHandler.grab_insert(target, 1, dbHandler.PROCESSING)
+        dbHandler.update_queue_status(target, 1, dbHandler.PROCESSING)
         # authenticate
         try:
             logger.info('[{}] Logging in'.format(target_account))
@@ -40,7 +40,7 @@ def grab_followers(target_account, scrape_percentage):
         except Exception as e:
             logger.error('Authentication failed')
             logger.error(e)
-            dbHandler.grab_insert(target, 1, dbHandler.FAILED)
+            dbHandler.update_queue_status(target, 1, dbHandler.FAILED)
             raise
 
         try:
@@ -81,7 +81,7 @@ def grab_followers(target_account, scrape_percentage):
         except Exception as e:
             logger.error('[{}] Main loop failed'.format(target_account))
             logger.error(e)
-            dbHandler.grab_insert(target, 1, dbHandler.FAILED)
+            dbHandler.update_queue_status(target, 1, dbHandler.FAILED)
             raise
 
         followers.sort(key=lambda x: x['pk'])
@@ -97,10 +97,10 @@ def grab_followers(target_account, scrape_percentage):
         except Exception as e:
             logger.error('Failed when writing results to file')
             logger.error(e)
-            dbHandler.grab_insert(target, 1, dbHandler.FAILED)
+            dbHandler.update_queue_status(target, 1, dbHandler.FAILED)
             raise
 
         logger.info('[{}] Successfully written to file'.format(target_account))
-        dbHandler.grab_insert(target, 1, dbHandler.COMPLETE)
+        dbHandler.update_queue_status(target, 1, dbHandler.COMPLETE)
     else:
         logger.info('[{}] Grab execution already complete'.format(target_account))
