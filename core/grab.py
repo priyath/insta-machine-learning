@@ -73,6 +73,10 @@ def grab_followers(target_account, scrape_percentage):
                 except http.client.IncompleteRead as e:
                     logger.error('[{}] Incomplete read exception. Lets retry'.format(target_account))
                     continue
+                except ConnectionResetError as e:
+                    logger.error('[{}] Connection reset error. Lets sleep for a minute'.format(target_account))
+                    time.sleep(60)
+                    continue
 
         except Exception as e:
             logger.error('[{}] Main loop failed'.format(target_account))
