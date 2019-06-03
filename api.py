@@ -84,17 +84,16 @@ def api_analyze():
 
 
 # endpoint to fetch job status
-@app.route('/api/v1/status', methods=['POST'])
+@app.route('/api/v1/status', methods=['GET'])
 def api_status():
-    content = request.get_json()
+    account = request.args.get('account')
 
-    if not validate_request(content):
-        abort(400, 'required parameter account is missing')
+    if not account:
+        abort(400, 'required query parameter account is missing')
 
-    target = content['account']
     logger.info(
-        '[{}] Account received for status. account: {}'.format(target, target))
-    return dbHandler.get_status(target), 200
+        '[{}] Account received for status. account: {}'.format(account, account))
+    return dbHandler.get_status(account), 200
 
 
 # endpoint to get analysis results

@@ -18,7 +18,9 @@ def insert_account(username):
         con.commit()
         con.close()
     except sql.IntegrityError as e:
-        cur.execute("UPDATE ACCOUNT_INFO SET q2_status = CASE WHEN q2_status == 'failed' THEN 'pending' ELSE q2_status END WHERE username = ?", (username, ))
+        cur.execute(
+            "UPDATE ACCOUNT_INFO SET q2_status = CASE WHEN q2_status == 'failed' THEN 'pending' ELSE q2_status END WHERE username = ?",
+            (username,))
         con.commit()
         con.close()
 
@@ -81,14 +83,34 @@ def get_status(username):
     con = sql.connect(database_path)
     cur = con.cursor()
 
-    cur.execute("SELECT q1_status, q2_status, q3_status FROM ACCOUNT_INFO WHERE username = ?", (username,))
+    cur.execute("SELECT "
+                "q1_status, "
+                "q2_status, "
+                "q3_status, "
+                "q1_progress, "
+                "q2_progress, "
+                "q1_exec_time, "
+                "q2_exec_time, "
+                "result "
+                "FROM ACCOUNT_INFO WHERE username = ?", (username,))
     row = cur.fetchone()
 
     if row:
         status = {
-            "1_grab_queue": row[0],
-            "2_scrape_queue": row[1],
-            "3_predict_queue": row[2]
+            "1_grab_queue": {
+                "status": row[0],
+                "grabbed": row[3],
+                "exec_time": row[5]
+            },
+            "2_scrape_queue": {
+                "status": row[1],
+                "scraped": row[4],
+                "exec_time": row[6]
+            },
+            "3_predict_queue": {
+                "status": row[2],
+                "result": row[7]
+            },
         }
         return json.dumps(status)
     else:
@@ -104,3 +126,24 @@ def should_queue(username):
 
     return not row or (row[0] == FAILED or row[1] == FAILED or row[2] == FAILED)
 
+
+################# GRAB UTILITY FUNCTIONS ########################
+
+def update_grab_progress(username, grabbed, exec_time):
+    con = sql.connect(database_path)
+    cur = con.cursor()
+
+    cur.execute("UPDATE ACCOUNT_INFO SET q1_progress = ?, q1_exec_time = ? WHERE username = ?", (grabbed, exec_time, username))
+    con.commit()
+
+    con.close()
+
+
+def update_grab_execution_time(username, exec_time):
+    con = sql.connect(database_path)
+    cur = con.cursor()
+
+    cur.execute("UPDATE ACCOUNT_INFO SET q1_exec_time = ? WHERE username = ?", (exec_time, username))
+    con.commit()
+
+    con.close()
