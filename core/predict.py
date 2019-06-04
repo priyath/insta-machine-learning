@@ -62,31 +62,40 @@ def analyze(target):
             fake_count = 0
             influencer_count = 0
             mass_count = 0
-            results = "username, prediction\n"
+            results = "username, prediction, followers, following, post_count, has_profile_pic, " \
+                      "is_mass_account, is_influencer_account\n"
 
             for i in range(total_account_count):
                 post_count = int(X_data[i][0])
                 follower_count = int(X_data[i][2])
                 following_count = int(X_data[i][1])
-                has_prof_pic = int(X_data[i][3])
+                has_prof_pic = 'true' if int(X_data[i][3]) == 1 else 'false'
                 username = usernames[i]
                 rating = 'real'
                 count = count + 1
+
+                #csv fields
+                is_mass_account = 'false'
+                is_influencer_account = 'false'
 
                 if Y_predict[i] == 1:
                     fake_count = fake_count + 1
                     rating = 'fake'
                 # print  "username: %s prediction: %s" % (username, rating)
-                result = "%s, %s\n" % (username, rating)
-                results += str(result)
 
                 # count influencers
-                if (follower_count > 5000):
+                if follower_count > 5000:
                     influencer_count = influencer_count + 1
+                    is_influencer_account = 'true'
 
                 # mass following accounts
-                if (following_count > 1000):
+                if following_count > 1000:
                     mass_count = mass_count + 1
+                    is_mass_account = 'true'
+
+                result = "%s, %s, %s, %s, %s, %s, %s, %s\n" % (username, rating, follower_count, following_count,
+                                                               post_count, has_prof_pic, is_mass_account, is_influencer_account )
+                results += str(result)
 
             account_statistics = {
                 "account_name": target,
