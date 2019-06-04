@@ -90,11 +90,14 @@ def analyze(target):
 
             account_statistics = {
                 "account_name": target,
-                "accounts_analyzed": total_account_count,
+                "total_accounts": total_account_count,
+                "fake_accounts": fake_count,
                 "real_accounts": (total_account_count - fake_count),
-                "influencer_accounts": influencer_count,
-                "suspicious_accounts": fake_count,
-                "mass_accounts": mass_count,
+                "breakdown": {
+                    "influencer_accounts": influencer_count,
+                    "suspicious_accounts": None,
+                    "mass_accounts": mass_count
+                }
             }
 
             logger.info('[{}] Analysis complete. Writing to file'.format(target))
