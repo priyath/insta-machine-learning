@@ -31,6 +31,8 @@ def validate_request(content):
         return False, 'required parameter account is missing'
     if 'percentage' in content and not str(content['percentage']).replace('.', '', 1).isdigit():
         return False, 'percentage should be a number'
+    if 'percentage' in content and float(content['percentage']) > 100:
+        return False, 'percentage value should be less than 100'
 
     return True, None
 
