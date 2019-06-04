@@ -1,5 +1,5 @@
 import flask
-from flask import request, abort, Response
+from flask import request, abort, Response, send_file
 from rq import Queue
 from flask import jsonify
 
@@ -23,6 +23,8 @@ app.config["DEBUG"] = False
 q1 = Queue('Q1', connection=conn1)
 q2 = Queue('Q2', connection=conn2)
 q3 = Queue('Q3', connection=conn3)
+
+analysis_csv_path = '/home/forge/insta-machine-learning/core/analysis'
 
 
 def validate_request(content):
@@ -105,6 +107,24 @@ def api_status():
     logger.info(
         '[{}] Account received for status. account: {}'.format(account, account))
     return dbHandler.get_status(account), 200
+
+
+@app.route('/api/v1/download/<account>', methods=['GET'])
+def api_download_details(account = None):
+    if account is None:
+        abort(400, 'account not specified')
+    try:
+
+        logger.info('[{}] request for details file'.format(account))
+        file_path = analysis_csv_path + '/{}_analysis_details.csv'.format(account)
+        return send_file(file_path, as_attachment=True)
+
+    except FileNotFoundError as e:
+        logger.error('[{}] analysis csv not found'.format(account))
+        abort(400, 'analysis csv not found for specified account {}'.format(account))
+    except Exception as e:
+        logger.error(e)
+        abort(400, 'Something went wrong while retrieving analysis csv for {}'.format(account))
 
 
 if __name__ == '__main__':
