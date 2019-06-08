@@ -2,15 +2,18 @@ from instagram_private_api import Client
 import time
 import configparser
 import logging
-import sys
+import json
 import math
 import http
 import core.db as dbHandler
+import codecs
+import os.path
 
 logger = logging.getLogger("rq.worker.grab")
 
 config_path = 'config/config.ini'
 followers_path = './core/followers/'
+settings_file_path = 'config/login_cache.json'
 
 INCREMENT = 5000
 
@@ -27,6 +30,26 @@ except Exception as e:
     raise
 
 
+def to_json(python_object):
+    if isinstance(python_object, bytes):
+        return {'__class__': 'bytes',
+                '__value__': codecs.encode(python_object, 'base64').decode()}
+    raise TypeError(repr(python_object) + ' is not JSON serializable')
+
+
+def from_json(json_object):
+    if '__class__' in json_object and json_object['__class__'] == 'bytes':
+        return codecs.decode(json_object['__value__'].encode(), 'base64')
+    return json_object
+
+
+def on_login_callback(api, new_settings_file):
+    cache_settings = api.settings
+    with open(new_settings_file, 'w') as outfile:
+        json.dump(cache_settings, outfile, default=to_json)
+        logger.info('SAVED: {0!s}'.format(new_settings_file))
+
+
 def grab_followers(target_account, scrape_percentage):
     target = target_account
     followers = []
@@ -35,8 +58,19 @@ def grab_followers(target_account, scrape_percentage):
         dbHandler.update_queue_status(target, 1, dbHandler.PROCESSING)
         # authenticate
         try:
-            logger.info('[{}] Logging in'.format(target_account))
-            api = Client(username, password)
+            if not os.path.isfile(settings_file_path):
+                logger.info('[{}] Logging in'.format(target_account))
+                api = Client(username, password, on_login=lambda x: on_login_callback(x, settings_file_path))
+            else:
+                with open(settings_file_path) as file_data:
+                    cached_settings = json.load(file_data, object_hook=from_json)
+                logger.info('[{}] Reusing settings: {}'.format(target_account, settings_file_path))
+
+                device_id = cached_settings.get('device_id')
+                # reuse auth settings
+                api = Client(
+                    username, password,
+                    settings=cached_settings)
         except Exception as e:
             logger.error('Authentication failed')
             logger.error(e)
