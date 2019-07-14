@@ -19,7 +19,11 @@ def insert_account(username):
         con.close()
     except sql.IntegrityError as e:
         cur.execute(
-            "UPDATE ACCOUNT_INFO SET q2_status = CASE WHEN q2_status == 'failed' THEN 'pending' ELSE q2_status END WHERE username = ?",
+            "UPDATE ACCOUNT_INFO "
+            "SET q1_status = CASE WHEN q1_status == 'failed' THEN 'pending' ELSE q1_status END, "
+                "q2_status = CASE WHEN q2_status == 'failed' THEN 'pending' ELSE q2_status END, "
+                "q3_status = CASE WHEN q3_status == 'failed' THEN 'pending' ELSE q3_status END "
+            "WHERE username = ?",
             (username,))
         con.commit()
         con.close()
