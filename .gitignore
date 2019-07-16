@@ -8,3 +8,4 @@ venv/
 rotateV5.py
 database/mlinsta.db
 sshkey
+misc/*
