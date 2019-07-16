@@ -1,0 +1,13 @@
+1. start supervisor
+sudo supervisord
+
+2. check status
+sudo supervisorctl status
+
+3. check privoxy, torrc
+ps -eaf | grep "privoxy/torrc"
+
+4. start privoxy, torrc
+./config/start.sh
+
+5. check using step 3

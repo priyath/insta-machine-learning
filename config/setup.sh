@@ -23,6 +23,8 @@ echo 'HashedControlPassword 16:3AF1F35D3C474BF460F2C6ACCF54D916BB7958DFE22D8100E
 
 echo 'CookieAuthentication 1' >> /etc/tor/torrc$i
 
+echo 'MaxCircuitDirtiness 10' >> /etc/tor/torrc$i
+
 fi
 
 #PRIVOXY CONFIGS

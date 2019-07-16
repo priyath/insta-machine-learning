@@ -29,6 +29,24 @@ def insert_account(username):
         con.close()
 
 
+def update_account_rescrape(username):
+    con = sql.connect(database_path)
+    cur = con.cursor()
+
+    try:
+        cur.execute(
+            "UPDATE ACCOUNT_INFO "
+            "SET q1_status = 'pending', "
+            "q2_status = 'pending', "
+            "q3_status = 'pending'"
+            "WHERE username = ?",
+            (username,))
+        con.commit()
+        con.close()
+    except Exception as e:
+        raise e
+
+
 def update_queue_status(username, queue, status):
     con = sql.connect(database_path)
     cur = con.cursor()
@@ -117,6 +135,16 @@ def should_queue(username):
     row = cur.fetchone()
 
     return not row or (row[0] == FAILED or row[1] == FAILED or row[2] == FAILED)
+
+
+def is_exec_complete(username):
+    con = sql.connect(database_path)
+    cur = con.cursor()
+
+    cur.execute("SELECT q1_status, q2_status, q3_status FROM ACCOUNT_INFO WHERE username = ?", (username,))
+    row = cur.fetchone()
+
+    return row and (row[0] == COMPLETE and row[1] == COMPLETE and row[2] == COMPLETE)
 
 
 ################# GRAB UTILITY FUNCTIONS ########################

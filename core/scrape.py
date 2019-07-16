@@ -31,7 +31,6 @@ logger = logging.getLogger("rq.worker.scrape")
 columns = 'username, posts, following, followers, has_profile_pic, is_verified, follow_posts_ratio, ' \
           'followed_by_posts_ratio, follow_followed_by_ratio, ratio_difference, rating '
 target_account = ''
-user_filename = 'list'
 index = None
 
 # load configurations from  config.ini
@@ -67,7 +66,7 @@ desktop_agents = [
 ]
 
 
-def load_user_list():
+def load_user_list(user_filename):
     logger.info('[{}] Reading user list from {}'.format(target_account, user_filename))
     with open(followers_path + user_filename, 'r') as f:
         user_list = f.readlines()
@@ -282,17 +281,34 @@ def initate_scraping(user_list, max_workers=MAX_WORKERS, main_loop_counter=1, fa
             initate_scraping(failed_counter, max_workers, (main_loop_counter + 1), failed_retries)
 
 
-def init(target):
-    global user_filename, target_account, start_time
+def diff(first, second):
+    second = set(second)
+    return [item for item in first if item not in second]
+
+
+def get_user_list(target, rescrape):
+    if rescrape:
+        user_list_previous = load_user_list(target + '_followers_previous.txt')
+        user_list_current = load_user_list(target + '_followers.txt')
+        user_list = diff(user_list_current, user_list_previous)
+        logger.info('[{}] New users diff: {}'.format(target, len(user_list)))
+
+    else:
+        silent_remove(followers_path + target + '_model_data.csv')
+        user_list = load_user_list(target + '_followers.txt')
+
+    return user_list
+
+
+def init(target, rescrape):
+    global target_account, start_time
 
     start_time = time.time()
     target_account = target
 
     if not dbHandler.is_complete(target_account, 2):
-        user_filename = target + '_followers.txt'
-        silent_remove(followers_path + target + '_model_data.csv')
 
-        user_list = load_user_list()
+        user_list = get_user_list(target, rescrape)
         logger.info('[{}] Scraping {} accounts from {}'.format(target_account, len(user_list), target_account))
 
         dbHandler.update_queue_status(target_account, 2, dbHandler.PROCESSING)

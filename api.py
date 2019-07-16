@@ -57,7 +57,6 @@ def api_analyze():
 
     target = content['account']
     scrape_percentage = float(content['percentage']) if 'percentage' in content else 100
-    # force = content['force']
 
     logger.info(
         '[{}] Account received for processing. account: {} percentage: {}'.format(target, target, scrape_percentage))
@@ -65,25 +64,33 @@ def api_analyze():
     q2_id = target + '-q2'
     q3_id = target + '-q3'
 
+    should_queue = dbHandler.should_queue(target)
+    is_exec_complete = dbHandler.is_exec_complete(target)
+
     # queue our account id to grab followers
-    if dbHandler.should_queue(target):
+    if should_queue or is_exec_complete:
 
-        dbHandler.insert_account(target)
+        rescrape = True if is_exec_complete else False
 
-        job_1_args = (target, scrape_percentage)
+        if rescrape:
+            dbHandler.update_account_rescrape(target)
+        else:
+            dbHandler.insert_account(target)
+
+        job_1_args = (target, scrape_percentage, rescrape)
         job_1 = q1.enqueue_call(
             func=grab_followers, args=job_1_args, result_ttl=10, job_id=q1_id, timeout=172800
         )
 
         job_2 = q2.enqueue_call(
-            func=init, depends_on=job_1, args=(target,), result_ttl=10, job_id=q2_id, timeout=172800
+            func=init, depends_on=job_1, args=(target, rescrape,), result_ttl=10, job_id=q2_id, timeout=172800
         )
 
         job_3 = q3.enqueue_call(
             func=analyze, depends_on=job_2, args=(target,), result_ttl=10, job_id=q3_id, timeout=172800
         )
 
-        logger.info('[{}] Account is queued for processing'.format(target))
+        logger.info('[{}] Account is queued for processing. Percentage: {} Rescrape: {}'.format(target, scrape_percentage, rescrape))
         return jsonify({
             'account': target,
             'message': 'Account is successfully queued for processing'

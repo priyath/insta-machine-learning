@@ -50,7 +50,7 @@ def on_login_callback(api, new_settings_file):
         logger.info('SAVED: {0!s}'.format(new_settings_file))
 
 
-def grab_followers(target_account, scrape_percentage):
+def grab_followers(target_account, scrape_percentage, rescrape):
     target = target_account
     followers = []
 
@@ -134,6 +134,17 @@ def grab_followers(target_account, scrape_percentage):
 
         followers.sort(key=lambda x: x['pk'])
         logger.info('[{}] Grabbing complete'.format(target_account))
+
+        # if this is a rescrape, rename previous result file to identify diff
+        if rescrape:
+            try:
+                logger.info('[{}] Renaming previous grab results'.format(target_account))
+                os.rename(followers_path + str(target) + "_followers.txt", followers_path + str(target) + "_followers_previous.txt")
+            except Exception as e:
+                logger.error('Failed when writing results to file')
+                logger.error(e)
+                # dbHandler.update_queue_status(target, 1, dbHandler.FAILED)
+                raise
 
         try:
             # write execution results to file
