@@ -1,0 +1,10 @@
+server {
+    listen 5000;
+    server_name 104.248.30.212;
+
+    location / {
+        proxy_pass http://localhost:8000;
+        include /etc/nginx/proxy_params;
+        proxy_redirect off;
+    }
+}
