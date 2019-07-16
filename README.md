@@ -4,7 +4,9 @@ ML-API is a flask based API implemented to analyze instagram accounts using mach
 Once an account is submitted for analysis, the following process is executed:
 
 **Step 1:** Grab followers of account using the grab script
+
 **Step 2:**  Scrape details of the followers grabbed in step 1, using the scrape script
+
 **Step 3:**  Perform machine learning analysis on the scraped data using the predict script and persist results to an sqlite3 database
 
 ## Deployment
