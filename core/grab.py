@@ -8,6 +8,7 @@ import http
 import core.db as dbHandler
 import codecs
 import os.path
+from itertools import cycle
 
 logger = logging.getLogger("rq.worker.grab")
 
@@ -17,6 +18,37 @@ settings_file_path = 'config/login_cache.json'
 
 INCREMENT = 5000
 
+CLIENT_CONNECTIONS = []
+SCRAPER_ACCOUNTS = []
+
+
+def get_client(scraper_username, scraper_password, proxy):
+    print('using scraper account: {}'.format(scraper_username))
+
+    settings_path = settings_file_path.format(scraper_username)
+    try:
+        if not os.path.isfile(settings_path):
+            print('[{}] Logging in'.format(scraper_username))
+            print('Username: {} Password: {}'.format(scraper_username, scraper_password))
+            # proxy='http://138.197.49.55:50000'
+            return Client(scraper_username, scraper_password, proxy=proxy, on_login=lambda x: on_login_callback(x, settings_path.format(scraper_username)))
+        else:
+            with open(settings_path) as file_data:
+                cached_settings = json.load(file_data, object_hook=from_json)
+            print('[{}] Reusing settings: {}'.format(scraper_username, settings_path))
+
+            device_id = cached_settings.get('device_id')
+            # reuse auth settings
+            return Client(
+                scraper_username, scraper_password,
+                settings=cached_settings,
+                proxy=proxy)
+    except Exception as e:
+        print('Authentication failed')
+        print(e)
+        raise
+
+
 # load configurations from  config.ini
 try:
     config = configparser.ConfigParser()
@@ -24,10 +56,26 @@ try:
     username = config.get('Credentials', 'username').strip()
     password = config.get('Credentials', 'password').strip()
     scrape_limit = int(config.get('Scrape', 'scrape_limit').strip())
+
+    # configure scraper accounts
+    scraper_accounts = config.get('GrabProxy', 'scraper_accounts').split(',')
+    scraper_passwords = config.get('GrabProxy', 'scraper_passwords').split(',')
+    scraper_proxy = config.get('GrabProxy', 'scraper_proxy').split(',')
+
+    for i in range(len(scraper_accounts)):
+        CLIENT_CONNECTIONS.append(get_client(scraper_accounts[i], scraper_passwords[i], scraper_proxy[i]))
+
 except Exception as e:
     logger.error('Error reading configuration details from config.ini')
     logger.error(e)
     raise
+
+round_robin = cycle(CLIENT_CONNECTIONS)
+SLEEP_INTERVAL = 100/len(CLIENT_CONNECTIONS)
+
+
+def get_next_username_client():
+    return round_robin.__next__()
 
 
 def to_json(python_object):
@@ -51,31 +99,12 @@ def on_login_callback(api, new_settings_file):
 
 
 def grab_followers(target_account, scrape_percentage, rescrape):
+    api = get_next_username_client()
     target = target_account
     followers = []
 
     if not dbHandler.is_complete(target, 1):
         dbHandler.update_queue_status(target, 1, dbHandler.PROCESSING)
-        # authenticate
-        try:
-            if not os.path.isfile(settings_file_path):
-                logger.info('[{}] Logging in'.format(target_account))
-                api = Client(username, password, on_login=lambda x: on_login_callback(x, settings_file_path))
-            else:
-                with open(settings_file_path) as file_data:
-                    cached_settings = json.load(file_data, object_hook=from_json)
-                logger.info('[{}] Reusing settings: {}'.format(target_account, settings_file_path))
-
-                device_id = cached_settings.get('device_id')
-                # reuse auth settings
-                api = Client(
-                    username, password,
-                    settings=cached_settings)
-        except Exception as e:
-            logger.error('Authentication failed')
-            logger.error(e)
-            # dbHandler.update_queue_status(target, 1, dbHandler.FAILED)
-            raise
 
         start = time.time()
 
@@ -116,7 +145,9 @@ def grab_followers(target_account, scrape_percentage, rescrape):
 
                     if len(followers) >= scrape_limit:  # limit scrape
                         break
-                    time.sleep(2)
+                    logger.info('[{}] Sleeping for {} seconds'.format(target_account, SLEEP_INTERVAL))
+                    time.sleep(SLEEP_INTERVAL)
+                    api = get_next_username_client()
 
                 except http.client.IncompleteRead as e:
                     logger.error('[{}] Incomplete read exception. Lets retry'.format(target_account))
