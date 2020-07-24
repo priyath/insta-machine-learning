@@ -25,7 +25,6 @@ def silent_remove(filename):
         if e.errno != errno.ENOENT: # errno.ENOENT = no such file or directory
             raise # re-raise exception if a different error occurred
 
-
 logger = logging.getLogger("rq.worker.scrape")
 
 columns = 'username, posts, following, followers, has_profile_pic, is_verified, follow_posts_ratio, ' \
@@ -36,21 +35,10 @@ index = None
 # load configurations from  config.ini
 config = configparser.ConfigParser()
 config.read(config_path)
-proxy_ports = config.get('Ports', 'proxy_ports').split(',')
-control_ports = config.get('Ports', 'control_ports').split(',')
-MAX_TOR_INSTANCES = int(config.get('Instances', 'tor_instances').strip())
+http_proxy = config.get('Proxy', 'http_proxy').split(',')
+https_proxy = config.get('Proxy', 'https_proxy').split(',')
 MAX_WORKERS = int(config.get('Instances', 'max_worker_threads').strip())
 FAILED_RETRY_LIMIT = int(config.get('Scrape', 'failed_retry_limit').strip())
-
-def build_proxy_list():
-    proxy_add = []
-    for i in range(len(proxy_ports)):
-        proxy_port = proxy_ports[i]
-        proxy_add.append('http://127.0.0.1:' + str(proxy_port).strip())
-    return proxy_add
-
-
-PROXY_ADDRESS = build_proxy_list()
 
 desktop_agents = [
     'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.99 Safari/537.36',
@@ -127,11 +115,9 @@ def get_profile_json(username, user_link, count):
         'status_code': None
     }
     try:
-        proxy_add = PROXY_ADDRESS[count % MAX_TOR_INSTANCES]
-        # print('using ' + proxy_add)
         proxies = {
-            "http": proxy_add,
-            "https": proxy_add,
+            "http": http_proxy,
+            "https": https_proxy,
         }
 
         headers = {
@@ -199,6 +185,7 @@ def write_to_file(path, mode, content):
         logger.error('[{}] Writing scraped content to file failed.'.format(target_account))
         logger.error(e)
         raise e
+
 
 def save_scraped_data(profile_data, failed_list, deleted_list):
     write_to_file(target_account + '_model_data.csv', 'a', profile_data)
