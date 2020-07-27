@@ -48,14 +48,14 @@ def get_client(scraper_username, scraper_password, proxy):
     settings_path = settings_file_path.format(scraper_username)
     try:
         if not os.path.isfile(settings_path):
-            print('[{}] Logging in'.format(scraper_username))
-            print('Username: {} Password: {}'.format(scraper_username, scraper_password))
+            logger.info('[{}] Logging in'.format(scraper_username))
+            logger.info('Username: {} Password: {} Proxy: {}'.format(scraper_username, scraper_password, proxy))
             # proxy='http://138.197.49.55:50000'
             return Client(scraper_username, scraper_password, proxy=proxy, on_login=lambda x: on_login_callback(x, settings_path.format(scraper_username)))
         else:
             with open(settings_path) as file_data:
                 cached_settings = json.load(file_data, object_hook=from_json)
-            print('[{}] Reusing settings: {}'.format(scraper_username, settings_path))
+            logger.info('[{}] Reusing settings: {}'.format(scraper_username, settings_path))
 
             device_id = cached_settings.get('device_id')
             # reuse auth settings
@@ -64,8 +64,8 @@ def get_client(scraper_username, scraper_password, proxy):
                 settings=cached_settings,
                 proxy=proxy)
     except Exception as e:
-        print('Authentication failed')
-        print(e)
+        logger.error('Authentication failed')
+        logger.error(e)
         raise
 
 
@@ -91,7 +91,7 @@ except Exception as e:
     raise
 
 round_robin = cycle(CLIENT_CONNECTIONS)
-SLEEP_INTERVAL = 100/len(CLIENT_CONNECTIONS)
+SLEEP_INTERVAL = 10/len(CLIENT_CONNECTIONS)
 
 
 def get_next_username_client():
@@ -101,6 +101,7 @@ def get_next_username_client():
 def grab_followers(target_account, scrape_percentage, rescrape):
     api = get_next_username_client()
     target = target_account
+    scraper_account = api.authenticated_user_name()
     followers = []
 
     if not dbHandler.is_complete(target, 1):
@@ -114,7 +115,7 @@ def grab_followers(target_account, scrape_percentage, rescrape):
             user_id = result['user']['pk']
 
             scrape_limit = math.ceil((follower_count * scrape_percentage)/100)
-            logger.info('[{}] Grabbing {} of followers for account {}'.format(target_account, scrape_limit, target_account))
+            logger.info('[{}] Grabbing {} of followers for account {}'.format(scraper_account, scrape_limit, target_account))
 
             # retrieve first batch of followers
             rank_token = Client.generate_uuid()
@@ -133,7 +134,8 @@ def grab_followers(target_account, scrape_percentage, rescrape):
 
                     next_max_id = results.get('next_max_id')
                     count += 1
-                    logger.info('[{}] Followers scraped: {}/{}'.format(target_account, len(followers), scrape_limit))
+                    logger.info('[{}][{}] : {}/{} followers scraped'.format(scraper_account, target_account, len(followers),
+                                                                               scrape_limit))
 
                     scraped = len(followers)
 
@@ -145,16 +147,14 @@ def grab_followers(target_account, scrape_percentage, rescrape):
 
                     if len(followers) >= scrape_limit:  # limit scrape
                         break
-                    logger.info('[{}] Sleeping for {} seconds'.format(target_account, SLEEP_INTERVAL))
+                    logger.info('[{}][{}] Sleeping for {} seconds'.format(scraper_account, target_account, SLEEP_INTERVAL))
                     time.sleep(SLEEP_INTERVAL)
                     api = get_next_username_client()
 
-                except http.client.IncompleteRead as e:
-                    logger.error('[{}] Incomplete read exception. Lets retry'.format(target_account))
-                    continue
-                except ConnectionResetError as e:
-                    logger.error('[{}] Connection reset error. Lets sleep for a minute'.format(target_account))
-                    time.sleep(60)
+                except Exception as e:
+                    logger.error('[{}][{}] Something went wrong. Error: {}'.format(target_account, scraper_account, e))
+                    time.sleep(10)
+                    api = get_next_username_client()
                     continue
 
         except Exception as e:
