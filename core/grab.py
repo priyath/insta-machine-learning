@@ -101,7 +101,7 @@ def get_next_username_client():
 def grab_followers(target_account, scrape_percentage, rescrape):
     api = get_next_username_client()
     target = target_account
-    scraper_account = api.authenticated_user_name()
+    scraper_account = api.authenticated_user_name
     followers = []
 
     if not dbHandler.is_complete(target, 1):
