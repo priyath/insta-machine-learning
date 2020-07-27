@@ -43,19 +43,17 @@ def on_login_callback(api, new_settings_file):
 
 
 def get_client(scraper_username, scraper_password, proxy):
-    print('using scraper account: {}'.format(scraper_username))
-
     settings_path = settings_file_path.format(scraper_username)
     try:
         if not os.path.isfile(settings_path):
-            logger.info('[{}] Logging in'.format(scraper_username))
-            logger.info('Username: {} Password: {} Proxy: {}'.format(scraper_username, scraper_password, proxy))
+            # logger.info('[{}] Logging in'.format(scraper_username))
+            # logger.info('Username: {} Password: {} Proxy: {}'.format(scraper_username, scraper_password, proxy))
             # proxy='http://138.197.49.55:50000'
             return Client(scraper_username, scraper_password, proxy=proxy, on_login=lambda x: on_login_callback(x, settings_path))
         else:
             with open(settings_path) as file_data:
                 cached_settings = json.load(file_data, object_hook=from_json)
-            logger.info('[{}] Reusing settings: {}'.format(scraper_username, settings_path))
+            # logger.info('[{}] Reusing settings: {}'.format(scraper_username, settings_path))
 
             device_id = cached_settings.get('device_id')
             # reuse auth settings
@@ -80,10 +78,10 @@ try:
     # configure scraper accounts
     scraper_accounts = config.get('GrabProxy', 'scraper_accounts').split(',')
     scraper_passwords = config.get('GrabProxy', 'scraper_passwords').split(',')
-    scraper_proxy = config.get('GrabProxy', 'scraper_proxy').split(',')
+    scraper_proxies = config.get('GrabProxy', 'scraper_proxy').split(',')
 
     for i in range(len(scraper_accounts)):
-        CLIENT_CONNECTIONS.append(get_client(scraper_accounts[i], scraper_passwords[i], scraper_proxy[i]))
+        CLIENT_CONNECTIONS.append([scraper_accounts[i], scraper_passwords[i], scraper_proxies[i]])
 
 except Exception as e:
     logger.error('Error reading configuration details from config.ini')
@@ -91,7 +89,7 @@ except Exception as e:
     raise
 
 round_robin = cycle(CLIENT_CONNECTIONS)
-SLEEP_INTERVAL = 10/len(CLIENT_CONNECTIONS)
+SLEEP_INTERVAL = 400/len(CLIENT_CONNECTIONS)
 
 
 def get_next_username_client():
@@ -99,9 +97,12 @@ def get_next_username_client():
 
 
 def grab_followers(target_account, scrape_percentage, rescrape):
-    api = get_next_username_client()
+    scraper_info = get_next_username_client()
+    scraper_account = scraper_info[0]
+    scraper_password = scraper_info[1]
+    scraper_proxy = scraper_info[2]
+
     target = target_account
-    scraper_account = api.authenticated_user_name
     followers = []
 
     if not dbHandler.is_complete(target, 1):
@@ -110,6 +111,7 @@ def grab_followers(target_account, scrape_percentage, rescrape):
         start = time.time()
 
         try:
+            api = get_client(scraper_account, scraper_password, scraper_proxy)
             result = api.username_info(target)
             follower_count = result['user']['follower_count']
             user_id = result['user']['pk']
@@ -149,12 +151,24 @@ def grab_followers(target_account, scrape_percentage, rescrape):
                         break
                     logger.info('[{}][{}] Sleeping for {} seconds'.format(scraper_account, target_account, SLEEP_INTERVAL))
                     time.sleep(SLEEP_INTERVAL)
-                    api = get_next_username_client()
+
+                    scraper_info = get_next_username_client()
+                    scraper_account = scraper_info[0]
+                    scraper_password = scraper_info[1]
+                    scraper_proxy = scraper_info[2]
+
+                    api = get_client(scraper_account, scraper_password, scraper_proxy)
 
                 except Exception as e:
                     logger.error('[{}][{}] Something went wrong. Error: {}'.format(target_account, scraper_account, e))
-                    time.sleep(10)
-                    api = get_next_username_client()
+                    time.sleep(300)
+
+                    scraper_info = get_next_username_client()
+                    scraper_account = scraper_info[0]
+                    scraper_password = scraper_info[1]
+                    scraper_proxy = scraper_info[2]
+
+                    api = get_client(scraper_account, scraper_password, scraper_proxy)
                     continue
 
         except Exception as e:
