@@ -14,7 +14,7 @@ logger = logging.getLogger("rq.worker.grab")
 
 config_path = 'config/config.ini'
 followers_path = './core/followers/'
-settings_file_path = 'config/login_cache.json'
+settings_file_path = 'config/login_cache_{}.json'
 
 INCREMENT = 5000
 
@@ -51,7 +51,7 @@ def get_client(scraper_username, scraper_password, proxy):
             logger.info('[{}] Logging in'.format(scraper_username))
             logger.info('Username: {} Password: {} Proxy: {}'.format(scraper_username, scraper_password, proxy))
             # proxy='http://138.197.49.55:50000'
-            return Client(scraper_username, scraper_password, proxy=proxy, on_login=lambda x: on_login_callback(x, settings_path.format(scraper_username)))
+            return Client(scraper_username, scraper_password, proxy=proxy, on_login=lambda x: on_login_callback(x, settings_path))
         else:
             with open(settings_path) as file_data:
                 cached_settings = json.load(file_data, object_hook=from_json)
