@@ -35,8 +35,8 @@ index = None
 # load configurations from  config.ini
 config = configparser.ConfigParser()
 config.read(config_path)
-http_proxy = config.get('Proxy', 'http_proxy').split(',')
-https_proxy = config.get('Proxy', 'https_proxy').split(',')
+http_proxy = config.get('Proxy', 'http_proxy').strip()
+https_proxy = config.get('Proxy', 'https_proxy').strip()
 MAX_WORKERS = int(config.get('Instances', 'max_worker_threads').strip())
 FAILED_RETRY_LIMIT = int(config.get('Scrape', 'failed_retry_limit').strip())
 
