@@ -16,7 +16,7 @@ config_path = 'config/config.ini'
 followers_path = './core/followers/'
 settings_file_path = 'config/login_cache_{}.json'
 
-INCREMENT = 5000
+INCREMENT = 1000
 
 CLIENT_CONNECTIONS = []
 SCRAPER_ACCOUNTS = []
@@ -89,7 +89,7 @@ except Exception as e:
     raise
 
 round_robin = cycle(CLIENT_CONNECTIONS)
-SLEEP_INTERVAL = 400/len(CLIENT_CONNECTIONS)
+SLEEP_INTERVAL = 400/(len(CLIENT_CONNECTIONS)*2)
 
 
 def get_next_username_client():
