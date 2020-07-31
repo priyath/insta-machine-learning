@@ -1,4 +1,4 @@
-from instagram_private_api import Client
+from instagram_web_api import Client
 import time
 import configparser
 import logging
@@ -49,7 +49,7 @@ def get_client(scraper_username, scraper_password, proxy):
             # logger.info('[{}] Logging in'.format(scraper_username))
             # logger.info('Username: {} Password: {} Proxy: {}'.format(scraper_username, scraper_password, proxy))
             # proxy='http://138.197.49.55:50000'
-            return Client(scraper_username, scraper_password, proxy=proxy, on_login=lambda x: on_login_callback(x, settings_path))
+            return Client(username=scraper_username, password=scraper_password, proxy=proxy, on_login=lambda x: on_login_callback(x, settings_path))
         else:
             with open(settings_path) as file_data:
                 cached_settings = json.load(file_data, object_hook=from_json)
@@ -58,7 +58,7 @@ def get_client(scraper_username, scraper_password, proxy):
             device_id = cached_settings.get('device_id')
             # reuse auth settings
             return Client(
-                scraper_username, scraper_password,
+                username=scraper_username, password=scraper_password,
                 settings=cached_settings,
                 proxy=proxy)
     except Exception as e:
@@ -112,32 +112,30 @@ def grab_followers(target_account, scrape_percentage, rescrape):
 
         try:
             api = get_client(scraper_account, scraper_password, scraper_proxy)
-            result = api.username_info(target)
-            follower_count = result['user']['follower_count']
-            user_id = result['user']['pk']
+            result = api.user_info2(target)
+            follower_count = result['edge_followed_by']['count']
+            user_id = result['id']
 
             scrape_limit = math.ceil((follower_count * scrape_percentage)/100)
             logger.info('[{}] Grabbing {} of followers for account {}'.format(scraper_account, scrape_limit, target_account))
-
-            # retrieve first batch of followers
-            rank_token = Client.generate_uuid()
-            results = api.user_followers(user_id, rank_token=rank_token)
-            followers.extend(results.get('users', []))
-            next_max_id = results.get('next_max_id')
 
             count = 1
 
             # main loop where the scraping happens
             periodic_val = INCREMENT
-            while next_max_id:
+            has_next_page = True
+            end_cursor = None
+            while has_next_page:
                 try:
-                    results = api.user_followers(user_id, rank_token=rank_token, max_id=next_max_id)
-                    followers.extend(results.get('users', []))
+                    results = api.user_followers(user_id, count=50, extract=False, end_cursor=end_cursor)
+                    edge_followed_by = results['data']['user']['edge_followed_by']
+                    end_cursor = edge_followed_by['page_info']['end_cursor']
+                    has_next_page = edge_followed_by['page_info']['has_next_page']
+                    followers.extend(edge_followed_by.get('edges', []))
 
-                    next_max_id = results.get('next_max_id')
                     count += 1
-                    logger.info('[{}][{}] : {}/{} followers scraped'.format(scraper_account, target_account, len(followers),
-                                                                               scrape_limit))
+                    logger.info('[{}][{}] : {}/{} followers scraped'.format(scraper_account, target_account,
+                                                                            len(followers), scrape_limit))
 
                     scraped = len(followers)
 
@@ -149,7 +147,8 @@ def grab_followers(target_account, scrape_percentage, rescrape):
 
                     if len(followers) >= scrape_limit:  # limit scrape
                         break
-                    logger.info('[{}][{}] Sleeping for {} seconds'.format(scraper_account, target_account, SLEEP_INTERVAL))
+                    logger.info('[{}][{}] Sleeping for {} seconds'.format(scraper_account, target_account,
+                                                                          SLEEP_INTERVAL))
                     time.sleep(SLEEP_INTERVAL)
 
                     scraper_info = get_next_username_client()
@@ -177,7 +176,6 @@ def grab_followers(target_account, scrape_percentage, rescrape):
             # dbHandler.update_queue_status(target, 1, dbHandler.FAILED)
             raise
 
-        followers.sort(key=lambda x: x['pk'])
         logger.info('[{}] Grabbing complete'.format(target_account))
 
         # if this is a rescrape, rename previous result file to identify diff
@@ -196,7 +194,7 @@ def grab_followers(target_account, scrape_percentage, rescrape):
             # TODO: paths to be read from config files
             with open(followers_path + str(target) + "_followers.txt", "w") as text_file:
                 for follower in followers:
-                    text_file.write("%s\n" % follower['username'])
+                    text_file.write("%s\n" % follower['node']['username'])
         except Exception as e:
             logger.error('Failed when writing results to file')
             logger.error(e)
