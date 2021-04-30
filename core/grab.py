@@ -49,7 +49,7 @@ def get_client(scraper_username, scraper_password, proxy):
             # logger.info('[{}] Logging in'.format(scraper_username))
             # logger.info('Username: {} Password: {} Proxy: {}'.format(scraper_username, scraper_password, proxy))
             # proxy='http://138.197.49.55:50000'
-            return Client(username=scraper_username, password=scraper_password, proxy=proxy, on_login=lambda x: on_login_callback(x, settings_path))
+            return Client(username=scraper_username, password=scraper_password, authenticate=True, proxy=proxy, on_login=lambda x: on_login_callback(x, settings_path))
         else:
             with open(settings_path) as file_data:
                 cached_settings = json.load(file_data, object_hook=from_json)
