@@ -148,7 +148,7 @@ def grab_followers(target_account, scrape_percentage, rescrape):
                         break
                     logger.info('[{}][{}] Sleeping for {} seconds'.format(scraper_account, target_account,
                                                                           SLEEP_INTERVAL))
-                    time.sleep(5)
+                    time.sleep(SLEEP_INTERVAL)
 
                     scraper_info = get_next_username_client()
                     scraper_account = scraper_info[0]
@@ -159,7 +159,7 @@ def grab_followers(target_account, scrape_percentage, rescrape):
 
                 except Exception as e:
                     logger.error('[{}][{}] Something went wrong. Error: {}'.format(target_account, scraper_account, e))
-                    time.sleep(10)
+                    time.sleep(300)
 
                     scraper_info = get_next_username_client()
                     scraper_account = scraper_info[0]
