@@ -173,6 +173,7 @@ def get_profile_json(username, user_link, count):
         return return_object
 
     except Exception as e:
+        logger.error(e)
         return return_object
 
 

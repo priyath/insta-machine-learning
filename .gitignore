@@ -1,4 +1,4 @@
-.idea/
+l.idea/
 __pycache__/
 logs/
 venv/
@@ -9,3 +9,4 @@ rotateV5.py
 database/mlinsta.db
 sshkey
 misc/*
+.idea
