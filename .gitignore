@@ -10,35 +10,4 @@ database/mlinsta.db
 sshkey
 misc/*
 .idea
-
-204.48.25.177
-
-[Proxy]
-http_proxy = http://138.197.49.55:50000
-https_proxy = https://138.197.49.55:50000
-
-[GrabProxy]
-scraper_accounts = chiquitabana1,chiquitabana2,chiquitabana3,chiquitabana4,chiquit8460,chiquit8,ciq219,chaq65,threw280,threw445
-scraper_passwords = Chiquita!2020,Chiquita!2020,Chiquita!2020,Chiquita!2020,Chiquita!2020,Chiquita!2020,Chiquita!2020,Chiquita!2020,Chiquita!2020,Chiquita!2020
-scraper_proxy = https://168.81.215.188:3199,https://168.80.39.86:3199,https://168.80.150.193:3199,https://67.227.127.22:3199,https://196.16.70.236:3199,https://67.227.127.22:3199,https://168.80.150.193:3199,https://196.16.70.236:3199,https://168.80.39.86:3199,https://168.81.215.188:3199
-
-[Instances]
-# worker threads
-max_worker_threads = 40
-
-[Credentials]
-# authentication credentials for grab.py script
-username = snakey.045
-password = mlscrape123
-
-[Scrape]
-# configs related to scraping
-scrape_limit = 1000
-failed_retry_limit = 10
-
-[Log]
-# log file paths
-flask_main = logs/api.log
-worker_grab = logs/worker_grab.log
-worker_scrape = logs/worker_scrape.log
-worker_analyze = logs/worker_analyze.log
+grab.py

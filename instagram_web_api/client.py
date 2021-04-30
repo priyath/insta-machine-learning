@@ -313,7 +313,7 @@ class Client(object):
     def _extract_rhx_gis(html):
         options = string.ascii_lowercase + string.digits
         text = ''.join([random.choice(options) for _ in range(8)])
-        return hashlib.md5(text.encode())
+        return hashlib.md5(text.encode()).hexdigest()
 
     @staticmethod
     def _extract_csrftoken(html):
