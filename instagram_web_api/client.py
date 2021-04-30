@@ -10,6 +10,7 @@ import hashlib
 import json
 import re
 import gzip
+import datetime
 from io import BytesIO
 import time
 import warnings
@@ -309,11 +310,9 @@ class Client(object):
 
     @staticmethod
     def _extract_rhx_gis(html):
-        mobj = re.search(
-            r'"rhx_gis":"(?P<rhx_gis>[a-f0-9]{32})"', html, re.MULTILINE)
-        if mobj:
-            return mobj.group('rhx_gis')
-        return None
+        options = string.ascii_lowercase + string.digits
+        text = ''.join([random.choice(options) for _ in range(8)])
+        return hashlib.md5(text.encode())
 
     @staticmethod
     def _extract_csrftoken(html):
@@ -382,7 +381,10 @@ class Client(object):
         """Login to the web site."""
         if not self.username or not self.password:
             raise ClientError('username/password is blank')
-        params = {'username': self.username, 'password': self.password, 'queryParams': '{}'}
+
+        time = str(int(datetime.datetime.now().timestamp()))
+        enc_password = "#PWD_INSTAGRAM_BROWSER:0:{}:{}".format(time,self.password)
+        params = {'username': self.username, 'enc_password': enc_password, 'queryParams': '{}'}
         self._init_rollout_hash()
         login_res = self._make_request('https://www.instagram.com/accounts/login/ajax/', params=params)
         if not login_res.get('status', '') == 'ok' or not login_res.get('authenticated'):
